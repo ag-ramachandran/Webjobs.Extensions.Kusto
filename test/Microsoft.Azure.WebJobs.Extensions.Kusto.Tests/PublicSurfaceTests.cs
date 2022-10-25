@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using Microsoft.Azure.WebJobs.Host.TestCommon;
+using Microsoft.Azure.WebJobs.Kusto;
 using Xunit;
 
 namespace Microsoft.Azure.WebJobs.Host.UnitTests

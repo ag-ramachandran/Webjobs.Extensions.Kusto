@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
-namespace Microsoft.Azure.WebJobs
+namespace Microsoft.Azure.WebJobs.Kusto
 {
     /// <summary>
     /// Setup an 'output' binding to an Kusto.
@@ -21,7 +21,7 @@ namespace Microsoft.Azure.WebJobs
         private readonly string _tableName;
         private readonly string _mappingRef;
         private readonly string _dataFormat;
-
+ 
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
         /// <param name="tableName">The name of the table to which to ingest data.</param>
         public KustoAttribute(string tableName)
@@ -48,16 +48,6 @@ namespace Microsoft.Azure.WebJobs
             _mappingRef = mappingRef;
             _dataFormat = dataFormat;
         }
-
-        [AutoResolve]
-        public string TableName => _tableName;
-
-        [AutoResolve]
-        public string mappingRef => _mappingRef;
-
-        [AutoResolve]
-        public string dataFormat => _dataFormat;
-
 
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private string DebuggerDisplay
