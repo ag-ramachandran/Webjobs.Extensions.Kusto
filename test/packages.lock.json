@@ -837,7 +837,7 @@
           "xunit.extensibility.core": "[2.3.1]"
         }
       },
-      "Microsoft.Azure.WebJobs.Extensions.Sql": {
+      "microsoft.azure.webjobs.extensions.kusto": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Azure.Kusto.Ingest": "[11.0.0, )",

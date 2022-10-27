@@ -8,6 +8,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.WebJobs.Extensions.Kusto.Tests", "test\Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.csproj", "{A5B55530-71C8-4A9A-92AD-1D33A5E80FC1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{21CDC01C-247B-46B0-A8F5-9D35686C628B}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{F7E99EB5-47D3-4B50-A6AA-D8D5508A121A}"
 EndProject

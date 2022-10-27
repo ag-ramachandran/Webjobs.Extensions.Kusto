@@ -9,7 +9,7 @@
     <RestoreLockedMode>true</RestoreLockedMode>
     <DelaySign>True</DelaySign>
     <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SQL2003.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/dev-key-public.snk</AssemblyOriginatorKeyFile>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>
