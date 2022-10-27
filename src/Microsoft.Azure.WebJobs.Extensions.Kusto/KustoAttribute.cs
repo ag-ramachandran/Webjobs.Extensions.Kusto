@@ -21,7 +21,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
         private readonly string _tableName;
         private readonly string _mappingRef;
         private readonly string _dataFormat;
- 
+
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
         /// <param name="tableName">The name of the table to which to ingest data.</param>
         public KustoAttribute(string tableName)
@@ -48,6 +48,15 @@ namespace Microsoft.Azure.WebJobs.Kusto
             _mappingRef = mappingRef;
             _dataFormat = dataFormat;
         }
+
+        [AutoResolve]
+        public string TableName => _tableName;
+
+        [AutoResolve]
+        public string MappingRef => _mappingRef;
+
+        [AutoResolve]
+        public string DataFormat => _dataFormat;
 
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private string DebuggerDisplay
