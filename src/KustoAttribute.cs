@@ -1,11 +1,11 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-using Microsoft.Azure.WebJobs.Description;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Microsoft.Azure.WebJobs.Description;
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
@@ -18,15 +18,11 @@ namespace Microsoft.Azure.WebJobs.Kusto
     public sealed class KustoAttribute : Attribute, IConnectionProvider
     {
 
-        private readonly string _tableName;
-        private readonly string _mappingRef;
-        private readonly string _dataFormat;
-
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
         /// <param name="tableName">The name of the table to which to ingest data.</param>
         public KustoAttribute(string tableName)
         {
-            _tableName = tableName;
+            this.TableName = tableName;
         }
 
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
@@ -34,8 +30,8 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// <param name="mappingRef">The mapping reference to use.</param>
         public KustoAttribute(string tableName, string mappingRef)
         {
-            _tableName = tableName;
-            _mappingRef = mappingRef;
+            this.TableName = tableName;
+            this.MappingRef = mappingRef;
         }
 
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
@@ -44,33 +40,33 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// <param name="dataFormat">Denotes the format of data. Can be one of JSON , CSV or other supported ingestion formats.</param>
         public KustoAttribute(string tableName, string mappingRef, string dataFormat)
         {
-            _tableName = tableName;
-            _mappingRef = mappingRef;
-            _dataFormat = dataFormat;
+            this.TableName = tableName;
+            this.MappingRef = mappingRef;
+            this.DataFormat = dataFormat;
         }
 
         [AutoResolve]
-        public string TableName => _tableName;
+        public string TableName { get; }
 
         [AutoResolve]
-        public string MappingRef => _mappingRef;
+        public string MappingRef { get; }
 
         [AutoResolve]
-        public string DataFormat => _dataFormat;
+        public string DataFormat { get; }
 
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private string DebuggerDisplay
         {
             get
             {
-                if (_dataFormat == null)
+                if (this.DataFormat == null)
                 {
-                    return _tableName;
+                    return this.TableName;
                 }
                 else
                 {
                     return string.Format(CultureInfo.InvariantCulture, "{0}(Mapping={1}, DataFormat={2})",
-                        _tableName, _mappingRef, _dataFormat);
+                        this.TableName, this.MappingRef, this.DataFormat);
                 }
             }
         }

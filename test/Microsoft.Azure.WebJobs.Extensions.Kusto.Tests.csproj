@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.WebJobs.Host.TestCommon" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.core" />
+    <PackageReference Include="xunit.extensibility.core" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\Microsoft.Azure.WebJobs.Extensions.Kusto.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Database\**\*.sql">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+  </ItemGroup>
+
+  <Target Name="CopySamples" AfterTargets="Build">
+    <ItemGroup>
+      <_CSharpCopyItems Include="..\samples\samples-csharp\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_CSharpCopyItems)" DestinationFolder="$(OutDir)\SqlExtensionSamples\CSharp\%(RecursiveDir)" />
+    <Message Text="Copied C# Samples output to $(OutDir)\SqlExtensionSamples\CSharp" Importance="high" />
+    <ItemGroup>
+      <_JsCopyItems Include="..\samples\samples-js\**\*.*" />
+      <_JsCopyItems Include="Integration\test-js\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_JsCopyItems)" DestinationFolder="$(OutDir)\SqlExtensionSamples\JavaScript\%(RecursiveDir)" />
+    <Message Text="Copied JS Samples output to $(OutDir)\SqlExtensionSamples\JavaScript" Importance="high" />
+  </Target>
+</Project>

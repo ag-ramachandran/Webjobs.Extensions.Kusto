@@ -1,6 +1,8 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Azure.WebJobs.Description;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Config;
@@ -8,8 +10,6 @@ using Microsoft.Azure.WebJobs.Kusto;
 using Microsoft.Azure.WebJobs.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Sql
 {
@@ -48,6 +48,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Sql
                 throw new ArgumentNullException(nameof(context));
             }
             ILogger logger = this._loggerFactory.CreateLogger(LogCategories.Bindings);
+#pragma warning disable CS0618 // Fine to use this for our stuff
             FluentBindingRule<KustoAttribute> inputOutputRule = context.AddBindingRule<KustoAttribute>();
             inputOutputRule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
         }

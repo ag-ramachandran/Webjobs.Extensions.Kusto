@@ -1,17 +1,17 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using Kusto.Data.Common;
 using Kusto.Ingest;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
@@ -90,9 +90,9 @@ namespace Microsoft.Azure.WebJobs.Kusto
                     this._rows.Clear();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
             finally
             {
@@ -114,15 +114,17 @@ namespace Microsoft.Azure.WebJobs.Kusto
             var upsertRowsAsyncSw = Stopwatch.StartNew();
             var kustoIngestProperties = new KustoIngestionProperties();
             this._logger.LogDebug("BEGIN IngestRowsAsync");
-            var parseResult = Enum.TryParse(attribute.DataFormat, out DataSourceFormat ingestDataFormat);
-            var isJson = DataSourceFormat.json.Equals(ingestDataFormat);
+            bool parseResult = Enum.TryParse(attribute.DataFormat, out DataSourceFormat ingestDataFormat);
+            // bool isJson = DataSourceFormat.json.Equals(ingestDataFormat);
             kustoIngestProperties.Format = parseResult ? ingestDataFormat : DataSourceFormat.json;
             kustoIngestProperties.TableName = attribute.TableName;
             if (!string.IsNullOrEmpty(attribute.MappingRef))
             {
-                this._logger.LogDebug("Using ingestionRef {}", attribute.MappingRef);
-                IngestionMapping ingestionMapping = new IngestionMapping();
-                ingestionMapping.IngestionMappingReference = attribute.MappingRef;
+                this._logger.LogDebug("Using ingestionRef {} with configuration {} ", attribute.MappingRef, configuration);
+                var ingestionMapping = new IngestionMapping
+                {
+                    IngestionMappingReference = attribute.MappingRef
+                };
                 kustoIngestProperties.IngestionMapping = ingestionMapping;
             }
 
@@ -141,7 +143,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             */
             foreach (T row in rows)
             {
-                var serializedJson = "";
+                string serializedJson;
                 if (typeof(T) == typeof(JObject))
                 {
                     // Is a JavaScript JSON object
@@ -161,7 +163,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
                         }
                     }
                 */
-                await IngestData(serializedJson, kustoIngestProperties, streamSourceOptions);
+                await this.IngestData(serializedJson, kustoIngestProperties, streamSourceOptions);
             }
             upsertRowsAsyncSw.Stop();
             this._logger.LogInformation("END IngestRowsAsync , ingestion took {} ", upsertRowsAsyncSw.ElapsedMilliseconds);
@@ -169,8 +171,8 @@ namespace Microsoft.Azure.WebJobs.Kusto
 
         private async Task<IngestionStatus> IngestData(string dataToIngest, KustoIngestionProperties kustoIngestionProperties, StreamSourceOptions streamSourceOptions)
         {
-            var ingestionResult = await this._kustoIngestClient.IngestFromStreamAsync(KustoBindingUtilities.StreamFromString(dataToIngest), kustoIngestionProperties, streamSourceOptions);
-            var ingestionStatus = ingestionResult.GetIngestionStatusBySourceId(streamSourceOptions.SourceId);
+            IKustoIngestionResult ingestionResult = await this._kustoIngestClient.IngestFromStreamAsync(KustoBindingUtilities.StreamFromString(dataToIngest), kustoIngestionProperties, streamSourceOptions);
+            IngestionStatus ingestionStatus = ingestionResult.GetIngestionStatusBySourceId(streamSourceOptions.SourceId);
             return ingestionStatus;
         }
 

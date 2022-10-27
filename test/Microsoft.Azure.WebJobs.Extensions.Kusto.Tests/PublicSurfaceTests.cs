@@ -1,20 +1,16 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
-
-using Microsoft.Azure.WebJobs.Host.TestCommon;
-using Microsoft.Azure.WebJobs.Kusto;
-using Xunit;
 
 namespace Microsoft.Azure.WebJobs.Host.UnitTests
 {
     public class PublicSurfaceTests
     {
-        [Fact]
-        public void WebJobs_Extensions_Kusto_VerifyPublicSurfaceArea()
+        [Xunit.Fact]
+        public void WebJobsExtensionsKustoVerifyPublicSurfaceArea()
         {
-            var assembly = typeof(KustoAttribute).Assembly;
+            System.Reflection.Assembly assembly = typeof(Kusto.KustoAttribute).Assembly;
 
-            var expected = new[]
+            string[] expected = new[]
             {
                 "KustoAttribute",
                 "KustoTriggerAttribute",
@@ -24,7 +20,7 @@ namespace Microsoft.Azure.WebJobs.Host.UnitTests
                 "KustoWebJobsStartup"
             };
 
-            TestHelpers.AssertPublicTypes(expected, assembly);
+            TestCommon.TestHelpers.AssertPublicTypes(expected, assembly);
         }
     }
 }
