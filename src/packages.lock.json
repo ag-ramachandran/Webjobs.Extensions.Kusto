@@ -165,15 +165,6 @@
           "Microsoft.Identity.Client.Extensions.Msal": "2.23.0"
         }
       },
-      "Microsoft.Azure.WebJobs.Core": {
-        "type": "Transitive",
-        "resolved": "3.0.33",
-        "contentHash": "4Rp5of6KFEGisQL7OJV2/8v3IQGFvTgZ9xSbB3bfkw5VHoNKn3Yllx7Qk/oUUX7Zey7jNu5mQFIR6dW6xNMX5Q==",
-        "dependencies": {
-          "System.ComponentModel.Annotations": "4.4.0",
-          "System.Diagnostics.TraceSource": "4.3.0"
-        }
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -750,6 +741,16 @@
         "contentHash": "zteT+G8xuGu6mS+mzDzYXbzS7rd3K6Fjb9RiZlYlJPam2/hU7JCBZBVEcywNuR+oZ1ncTvc/cq0faRr3P01OVg==",
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
+        }
+      },
+      "Microsoft.Azure.WebJobs.Core": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.33, )",
+        "resolved": "3.0.33",
+        "contentHash": "4Rp5of6KFEGisQL7OJV2/8v3IQGFvTgZ9xSbB3bfkw5VHoNKn3Yllx7Qk/oUUX7Zey7jNu5mQFIR6dW6xNMX5Q==",
+        "dependencies": {
+          "System.ComponentModel.Annotations": "4.4.0",
+          "System.Diagnostics.TraceSource": "4.3.0"
         }
       },
       "Microsoft.Data.SqlClient": {

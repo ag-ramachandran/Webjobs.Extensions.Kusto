@@ -193,15 +193,6 @@
           "NETStandard.Library": "2.0.1"
         }
       },
-      "Microsoft.Azure.WebJobs.Core": {
-        "type": "Transitive",
-        "resolved": "3.0.33",
-        "contentHash": "4Rp5of6KFEGisQL7OJV2/8v3IQGFvTgZ9xSbB3bfkw5VHoNKn3Yllx7Qk/oUUX7Zey7jNu5mQFIR6dW6xNMX5Q==",
-        "dependencies": {
-          "System.ComponentModel.Annotations": "4.4.0",
-          "System.Diagnostics.TraceSource": "4.3.0"
-        }
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -879,6 +870,16 @@
           "Newtonsoft.Json": "11.0.2",
           "System.Memory.Data": "1.0.1",
           "System.Threading.Tasks.Dataflow": "4.8.0"
+        }
+      },
+      "Microsoft.Azure.WebJobs.Core": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.33, )",
+        "resolved": "3.0.33",
+        "contentHash": "4Rp5of6KFEGisQL7OJV2/8v3IQGFvTgZ9xSbB3bfkw5VHoNKn3Yllx7Qk/oUUX7Zey7jNu5mQFIR6dW6xNMX5Q==",
+        "dependencies": {
+          "System.ComponentModel.Annotations": "4.4.0",
+          "System.Diagnostics.TraceSource": "4.3.0"
         }
       },
       "Microsoft.Data.SqlClient": {
