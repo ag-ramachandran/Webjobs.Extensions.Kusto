@@ -48,9 +48,12 @@ namespace Microsoft.Azure.WebJobs.Extensions.Sql
                 throw new ArgumentNullException(nameof(context));
             }
             ILogger logger = this._loggerFactory.CreateLogger(LogCategories.Bindings);
-#pragma warning disable CS0618 // Fine to use this for our stuff
-            FluentBindingRule<KustoAttribute> inputOutputRule = context.AddBindingRule<KustoAttribute>();
-            inputOutputRule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
+            /*
+                #pragma warning disable CS0618 // Fine to use this for our stuff
+                            FluentBindingRule<KustoAttribute> inputOutputRule = context.AddBindingRule<KustoAttribute>();
+                            inputOutputRule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
+            */
+            context.AddBindingRule<KustoAttribute>().BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
         }
     }
 
