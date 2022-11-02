@@ -5,7 +5,7 @@ using Microsoft.Azure.WebJobs.Hosting;
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
-    internal class KustoBindingStartup : IWebJobsStartup
+    public class KustoBindingStartup : IWebJobsStartup
     {
         public void Configure(IWebJobsBuilder builder)
         {

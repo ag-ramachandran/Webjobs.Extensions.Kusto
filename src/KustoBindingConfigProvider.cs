@@ -14,10 +14,10 @@ using Microsoft.Extensions.Logging;
 namespace Microsoft.Azure.WebJobs.Extensions.Sql
 {
     /// <summary>
-    /// Exposes SQL input, output bindings.
+    /// Exposes Kusto bindings.
     /// </summary>
     [Extension("Kusto")]
-    internal class KustoBindingConfigProvider : IExtensionConfigProvider
+    public class KustoBindingConfigProvider : IExtensionConfigProvider
     {
         private readonly IConfiguration _configuration;
         private readonly ILoggerFactory _loggerFactory;

@@ -7,7 +7,7 @@
     <Product>Kusto Binding Extension</Product>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <!-- Default Version for dev -->
-    <Version>99.99.99</Version>
+    <Version>1.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
@@ -23,6 +23,8 @@
     <PackageIcon>pkgicon.png</PackageIcon>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Title>Azure function bindings for Kusto</Title>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +40,10 @@
   <ItemGroup>
     <!-- ScriptDom is currently only available officially through the DacFx NuGet package. Rather than referencing DacFx
     for one ScriptDom API, we are getting the ScriptDom dll from the latest DacFx NuGet package. -->
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="pkgicon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
