@@ -3,11 +3,20 @@
     <PackageVersion Include="Microsoft.AspNet.Mvc">
       <Version>5.2.9</Version>
     </PackageVersion>
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Abstractions">
+      <Version>2.2.0</Version>
+    </PackageVersion>
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core">
+      <Version>2.2.5</Version>
+    </PackageVersion>
     <PackageVersion Include="Microsoft.Azure.Kusto.Ingest">
       <Version>11.0.0</Version>
     </PackageVersion>
     <PackageVersion Include="Microsoft.Azure.WebJobs.Core">
       <Version>3.0.33</Version>
+    </PackageVersion>
+    <PackageVersion Include="Microsoft.Azure.WebJobs.Extensions">
+      <Version>4.0.1</Version>
     </PackageVersion>
     <PackageVersion Include="Microsoft.Azure.WebJobs.Extensions.Http">
       <Version>3.2.0</Version>

@@ -24,12 +24,18 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// <returns>The built connection.</returns>
         public static IKustoIngestClient CreateIngestClient(KustoAttribute kustoAttribute)
         {
+            string connectionString = Environment.GetEnvironmentVariable("KustoConnectionString");
             string dmConnectionString = kustoAttribute.Connection;
+            if (connectionString != null)
+            {
+                dmConnectionString = connectionString;
+            }
             string engineConnectionString = dmConnectionString.ReplaceFirstOccurrence("ingest-", "");
             var dmKcsb = new KustoConnectionStringBuilder(dmConnectionString);
             var engineKcsb = new KustoConnectionStringBuilder(engineConnectionString);
             // Create a managed ingest connection            
-            return KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
+            IKustoIngestClient kustoStreamingClient = KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
+            return kustoStreamingClient;
         }
 
         public static Stream StreamFromString(string dataToIngest)

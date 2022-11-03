@@ -2,10 +2,12 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.Common;
 using Microsoft.Azure.WebJobs.Kusto;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.OutputBindingSamples
 {
@@ -13,12 +15,19 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.OutputBindingSamples
     {
         [FunctionName("AddProduct")]
         public static IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "addproduct")]
-            [FromBody] Product prod,
-            [Kusto("Products", Connection = "KustoConnectionString")] out Product product)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "addproduct")]
+            HttpRequest req, ILogger log,
+            [Kusto("Products",Connection = "KustoConnectionString")]
+            out Product product)
         {
-            product = prod;
-            return new CreatedResult($"/api/addproduct", product);
+            log.LogInformation($"C# function started");
+            product = new Product
+            {
+                Name = req.Query["name"],
+                ProductID = int.Parse(req.Query["productId"]),
+                Cost = int.Parse(req.Query["cost"])
+            };
+            return new CreatedResult($"/api/product", product.Name);
         }
     }
 }

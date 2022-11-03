@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using Microsoft.Azure.WebJobs.Hosting;
+using Microsoft.Azure.WebJobs.Kusto;
+
+[assembly: WebJobsStartup(typeof(KustoBindingStartup))]
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
