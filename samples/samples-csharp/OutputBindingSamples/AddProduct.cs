@@ -3,7 +3,6 @@
 
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.Common;
 using Microsoft.Azure.WebJobs.Kusto;
@@ -14,20 +13,23 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.OutputBindingSamples
     public static class AddProduct
     {
         [FunctionName("AddProduct")]
-        public static IActionResult Run(
+        public static void Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "addproduct")]
             HttpRequest req, ILogger log,
-            [Kusto("Products",Connection = "KustoConnectionString")]
-            out Product product)
+            [Kusto(database:"sdktestsdb" ,
+            tableName:"Products" ,
+            Connection = "KustoConnectionString")] IAsyncCollector<Product> collector)
         {
             log.LogInformation($"C# function started");
-            product = new Product
+            for (int i = 0; i < 10; i++)
             {
-                Name = req.Query["name"],
-                ProductID = int.Parse(req.Query["productId"]),
-                Cost = int.Parse(req.Query["cost"])
-            };
-            return new CreatedResult($"/api/product", product.Name);
+                collector.AddAsync(new Product()
+                {
+                    Name = req.Query["name"],
+                    ProductID = int.Parse(req.Query["productId"]),
+                    Cost = int.Parse(req.Query["cost"])
+                });
+            }
         }
     }
 }

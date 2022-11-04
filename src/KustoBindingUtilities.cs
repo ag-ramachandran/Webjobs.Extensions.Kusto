@@ -11,28 +11,38 @@ namespace Microsoft.Azure.WebJobs.Kusto
 {
     internal static class KustoBindingUtilities
     {
+        private static readonly string ingestPrefix = "ingest-";
+        private static readonly string protocolSuffix = "://";
         /// <summary>
         /// Builds a connection using the connection string attached to the app setting with name ConnectionString.
         /// </summary>
         /// <param name="kustoAttribute">Kusto attribute for the ingestion.</param>
-        /// <exception cref="ArgumentException">
-        /// Thrown if ConnectionStringSetting is empty or null.
-        /// </exception>
         /// <exception cref="ArgumentNullException">
         /// Thrown if configuration is null.
         /// </exception>
         /// <returns>The built connection.</returns>
         public static IKustoIngestClient CreateIngestClient(KustoAttribute kustoAttribute)
         {
-            string connectionString = Environment.GetEnvironmentVariable("KustoConnectionString");
-            string dmConnectionString = kustoAttribute.Connection;
-            if (connectionString != null)
+            string envConnectionString = Environment.GetEnvironmentVariable("KustoConnectionString");
+            string engineConnectionString = kustoAttribute.Connection;
+
+            if (envConnectionString == null && engineConnectionString == null)
             {
-                dmConnectionString = connectionString;
+                throw new ArgumentNullException(nameof(kustoAttribute), "Connection string attribute is empty." +
+                    "Please pass KustoConnectionString through config or through the env-var KustoConnectionString");
             }
-            string engineConnectionString = dmConnectionString.ReplaceFirstOccurrence("ingest-", "");
-            var dmKcsb = new KustoConnectionStringBuilder(dmConnectionString);
+
+            if (engineConnectionString == null)
+            {
+                engineConnectionString = envConnectionString;
+            }
             var engineKcsb = new KustoConnectionStringBuilder(engineConnectionString);
+            /*
+                We expect minimal input from the user.The end user can just pass a connection string, we need to decipher the DM
+                ingest endpoint as well from this. Both the engine and DM endpoint are needed for the managed ingest to happen
+             */
+            string dmConnectionStringEndpoint = engineKcsb.Hostname.Contains(ingestPrefix) ? engineConnectionString : engineConnectionString.ReplaceFirstOccurrence(protocolSuffix, protocolSuffix + ingestPrefix);
+            var dmKcsb = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
             // Create a managed ingest connection            
             IKustoIngestClient kustoStreamingClient = KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
             return kustoStreamingClient;

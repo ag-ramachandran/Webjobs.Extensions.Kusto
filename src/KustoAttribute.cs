@@ -19,31 +19,40 @@ namespace Microsoft.Azure.WebJobs.Kusto
     {
 
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
+        /// <param name="database">The name of the database</param>
         /// <param name="tableName">The name of the table to which to ingest data.</param>
-        public KustoAttribute(string tableName)
+        public KustoAttribute(string database, string tableName)
         {
+            this.Database = database;
             this.TableName = tableName;
         }
 
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
+        /// <param name="database">The name of the database</param>
         /// <param name="tableName">The name of the table to which to ingest data.</param>
         /// <param name="mappingRef">The mapping reference to use.</param>
-        public KustoAttribute(string tableName, string mappingRef)
+        public KustoAttribute(string database, string tableName, string mappingRef)
         {
+            this.Database = database;
             this.TableName = tableName;
             this.MappingRef = mappingRef;
         }
 
         /// <summary>Initializes a new instance of the <see cref="KustoAttribute"/> class.</summary>
+        /// <param name="database">The name of the database</param>
         /// <param name="tableName">The name of the table to which to ingest data.</param>
         /// <param name="mappingRef">The mapping reference to use.</param>
         /// <param name="dataFormat">Denotes the format of data. Can be one of JSON , CSV or other supported ingestion formats.</param>
-        public KustoAttribute(string tableName, string mappingRef, string dataFormat)
+        public KustoAttribute(string database, string tableName, string mappingRef, string dataFormat)
         {
+            this.Database = database;
             this.TableName = tableName;
             this.MappingRef = mappingRef;
             this.DataFormat = dataFormat;
         }
+
+        [AutoResolve]
+        public string Database { get; }
 
         [AutoResolve]
         public string TableName { get; }
@@ -59,11 +68,6 @@ namespace Microsoft.Azure.WebJobs.Kusto
         {
             get
             {
-                if (this.DataFormat == null)
-                {
-                    return this.TableName;
-                }
-                else
                 {
                     return string.Format(CultureInfo.InvariantCulture, "{0}(Mapping={1}, DataFormat={2})",
                         this.TableName, this.MappingRef, this.DataFormat);

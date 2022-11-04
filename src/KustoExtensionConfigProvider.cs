@@ -11,13 +11,13 @@ using Microsoft.Azure.WebJobs.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Azure.WebJobs.Extensions.Sql
+namespace Microsoft.Azure.WebJobs.Extensions.Kusto
 {
     /// <summary>
     /// Exposes Kusto bindings.
     /// </summary>
     [Extension("Kusto")]
-    public class KustoBindingConfigProvider : IExtensionConfigProvider
+    public class KustoExtensionConfigProvider : IExtensionConfigProvider
     {
         private readonly IConfiguration _configuration;
         private readonly ILoggerFactory _loggerFactory;
@@ -28,7 +28,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Sql
         /// <exception cref="ArgumentNullException">
         /// Thrown if either parameter is null.
         /// </exception>
-        public KustoBindingConfigProvider(IConfiguration configuration, ILoggerFactory loggerFactory)
+        public KustoExtensionConfigProvider(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this._loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
@@ -48,11 +48,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.Sql
                 throw new ArgumentNullException(nameof(context));
             }
             ILogger logger = this._loggerFactory.CreateLogger(LogCategories.Bindings);
-            /*
-                #pragma warning disable CS0618 // Fine to use this for our stuff
-                            FluentBindingRule<KustoAttribute> inputOutputRule = context.AddBindingRule<KustoAttribute>();
-                            inputOutputRule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
-            */
             context.AddBindingRule<KustoAttribute>().BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
         }
     }

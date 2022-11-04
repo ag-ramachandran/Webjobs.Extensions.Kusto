@@ -28,10 +28,10 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// Initializes a new instance of the <see cref="KustoAsyncCollector<typeparamref name="T"/>"/> class.
         /// </summary>
         /// <param name="connection">
-        /// Contains the SQL connection that will be used by the collector when it inserts SQL rows into the user's table.
+        /// Contains the connection string used to establish connection to Kusto and ingest data.
         /// </param>
         /// <param name="attribute">
-        /// Contains as one of its attributes the SQL table that rows will be inserted into.
+        /// Contains as attributes the database and the table to ingest the data into.
         /// </param>
         /// <param name="loggerFactory">
         /// Logger Factory for creating an ILogger.
@@ -49,8 +49,8 @@ namespace Microsoft.Azure.WebJobs.Kusto
 
         /// <summary>
         /// Adds an item to this collector that is processed in a batch along with all other items added via
-        /// AddAsync when <see cref="FlushAsync"/> is called. Each item is interpreted as a row to be added to the SQL table
-        /// specified in the SQL Binding.
+        /// AddAsync when <see cref="FlushAsync"/> is called. Each item is interpreted as a row to be added to the Kusto table
+        /// specified in the Binding.
         /// </summary>
         /// <param name="item"> The item to add to the collector.</param>
         /// <param name="cancellationToken">The cancellationToken is not used in this method.</param>
@@ -72,9 +72,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
         }
 
         /// <summary>
-        /// Processes all items added to the collector via <see cref="AddAsync"/>. Each item is interpreted as a row to be added
-        /// to the SQL table specified in the SQL Binding. All rows are added in one transaction. Nothing is done
-        /// if no items were added via AddAsync.
+        /// Ingest rows to be added into the Kusto table. This uses managed streaming for the ingestion <see cref="AddAsync"/>.
         /// </summary>
         /// <param name="cancellationToken">The cancellationToken is not used in this method.</param>
         /// <returns> A CompletedTask if executed successfully. If no rows were added, this is returned
@@ -101,21 +99,17 @@ namespace Microsoft.Azure.WebJobs.Kusto
         }
 
         /// <summary>
-        /// Upserts the rows specified in "rows" to the table specified in "attribute"
-        /// If a primary key in "rows" already exists in the table, the row is interpreted as an update rather than an insert.
-        /// The column values associated with that primary key in the table are updated to have the values specified in "rows".
-        /// If a new primary key is encountered in "rows", the row is simply inserted into the table.
+        /// Ingests the rows specified in "rows" to the table specified in "kusto-attribute"
         /// </summary>
-        /// <param name="rows"> The rows to be upserted.</param>
-        /// <param name="attribute"> Contains the name of the table to be modified and SQL connection information.</param>
+        /// <param name="rows"> The rows to be ingested to Kusto.</param>
+        /// <param name="attribute"> Contains the name of the table to be ingested into.</param>
         /// <param name="configuration"> Used to build up the connection.</param>
         private async Task IngestRowsAsync(IEnumerable<T> rows, KustoAttribute attribute, IConfiguration configuration)
         {
             var upsertRowsAsyncSw = Stopwatch.StartNew();
-            var kustoIngestProperties = new KustoIngestionProperties();
-            this._logger.LogDebug("BEGIN IngestRowsAsync");
+            var kustoIngestProperties = new KustoIngestionProperties(attribute.Database, attribute.TableName);
+            this._logger.LogDebug("Ingesting rows into table {} in database {}", attribute.TableName, attribute.Database);
             bool parseResult = Enum.TryParse(attribute.DataFormat, out DataSourceFormat ingestDataFormat);
-            // bool isJson = DataSourceFormat.json.Equals(ingestDataFormat);
             kustoIngestProperties.Format = parseResult ? ingestDataFormat : DataSourceFormat.json;
             kustoIngestProperties.TableName = attribute.TableName;
             if (!string.IsNullOrEmpty(attribute.MappingRef))
@@ -133,8 +127,6 @@ namespace Microsoft.Azure.WebJobs.Kusto
             {
                 SourceId = sourceId,
             };
-
-            // IList<string> rowsToUpsert = new List<string>();
             /*
                 Can be a POCO to be serialized to a JSON
                 May be a string (CSV)

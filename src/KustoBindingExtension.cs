@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
-using Microsoft.Azure.WebJobs.Extensions.Sql;
+using Microsoft.Azure.WebJobs.Extensions.Kusto;
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
@@ -14,7 +14,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             {
                 throw new ArgumentNullException(nameof(builder));
             }
-            builder.AddExtension<KustoBindingConfigProvider>();
+            builder.AddExtension<KustoExtensionConfigProvider>();
             return builder;
         }
     }
