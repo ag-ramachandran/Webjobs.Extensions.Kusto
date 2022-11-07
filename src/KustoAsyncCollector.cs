@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kusto.Data.Common;
 using Kusto.Ingest;
+using Microsoft.Azure.WebJobs.Extensions.Kusto;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -44,7 +45,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this._attribute = attribute ?? throw new ArgumentNullException(nameof(attribute));
             this._logger = logger;
-            this._kustoIngestClient = KustoBindingUtilities.CreateIngestClient(attribute);
+            this._kustoIngestClient = KustoBindingUtilities.GetIngestClient(attribute, configuration);
         }
 
         /// <summary>
@@ -104,7 +105,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// <param name="rows"> The rows to be ingested to Kusto.</param>
         /// <param name="attribute"> Contains the name of the table to be ingested into.</param>
         /// <param name="configuration"> Used to build up the connection.</param>
-        private async Task IngestRowsAsync(IEnumerable<T> rows, KustoAttribute attribute, IConfiguration configuration)
+        private async Task IngestRowsAsync(List<T> rows, KustoAttribute attribute, IConfiguration configuration)
         {
             var upsertRowsAsyncSw = Stopwatch.StartNew();
             var kustoIngestProperties = new KustoIngestionProperties(attribute.Database, attribute.TableName);
@@ -127,36 +128,8 @@ namespace Microsoft.Azure.WebJobs.Kusto
             {
                 SourceId = sourceId,
             };
-            /*
-                Can be a POCO to be serialized to a JSON
-                May be a string (CSV)
-                May be a string (JSON)
-                TODO: Also see how we can support binary data
-            */
-            foreach (T row in rows)
-            {
-                string serializedJson;
-                if (typeof(T) == typeof(JObject))
-                {
-                    // Is a JavaScript JSON object
-                    serializedJson = JsonConvert.SerializeObject(row);
-                }
-                else
-                {
-                    serializedJson = row.ToString();
-                }
-                /*
-                    if (typeof(T) == typeof(JArray))
-                    {
-                        var jsons = row as JArray;
-                        foreach (JObject json in jsons)
-                        {
-                            serializedJson = JsonConvert.SerializeObject(json);
-                        }
-                    }
-                */
-                await this.IngestData(serializedJson, kustoIngestProperties, streamSourceOptions);
-            }
+
+
             upsertRowsAsyncSw.Stop();
             this._logger.LogInformation("END IngestRowsAsync , ingestion took {} ", upsertRowsAsyncSw.ElapsedMilliseconds);
         }

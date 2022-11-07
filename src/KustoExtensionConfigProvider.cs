@@ -48,10 +48,37 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
                 throw new ArgumentNullException(nameof(context));
             }
             ILogger logger = this._loggerFactory.CreateLogger(LogCategories.Bindings);
-            context.AddBindingRule<KustoAttribute>().BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
+#pragma warning disable CS0618 // Cannot use var. FluentBindingRule is in Beta
+            FluentBindingRule<KustoAttribute> rule = context.AddBindingRule<KustoAttribute>();
+            // Validate the attributes we have
+            rule.AddValidator(this.ValidateConnection);
+            // Bind to the types
+            rule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this._configuration, logger);
+        }
+        internal void ValidateConnection(KustoAttribute attribute, Type paramType)
+        {
+            if (string.IsNullOrEmpty(attribute.Connection))
+            {
+                string attributeProperty = $"{nameof(KustoAttribute)}.{nameof(KustoAttribute.Connection)}";
+                throw new InvalidOperationException(
+                    $"The {attributeProperty} property cannot be an empty value.");
+            }
+
+            if (string.IsNullOrEmpty(attribute.Database))
+            {
+                string attributeProperty = $"{nameof(KustoAttribute)}.{nameof(KustoAttribute.Database)}";
+                throw new InvalidOperationException(
+                    $"The {attributeProperty} property cannot be an empty value.");
+            }
+
+            if (string.IsNullOrEmpty(attribute.TableName))
+            {
+                string attributeProperty = $"{nameof(KustoAttribute)}.{nameof(KustoAttribute.TableName)}";
+                throw new InvalidOperationException(
+                    $"The {attributeProperty} property cannot be an empty value.");
+            }
         }
     }
-
     /// <summary>
     /// Wrapper around OpenType to receive data correctly from output bindings (not as byte[])
     /// This can be used for general "T --> JObject" bindings. 
@@ -73,7 +100,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
             {
                 return true;
             }
-
             return base.IsMatch(type, context);
         }
     }

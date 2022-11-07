@@ -2,15 +2,18 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using Kusto.Cloud.Platform.Utils;
 using Kusto.Data;
 using Kusto.Ingest;
+using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
     internal static class KustoBindingUtilities
     {
+        internal static ConcurrentDictionary<string, IKustoIngestClient> IngestClientCache { get; } = new ConcurrentDictionary<string, IKustoIngestClient>();
         private static readonly string ingestPrefix = "ingest-";
         private static readonly string protocolSuffix = "://";
         /// <summary>
@@ -21,21 +24,15 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// Thrown if configuration is null.
         /// </exception>
         /// <returns>The built connection.</returns>
-        public static IKustoIngestClient CreateIngestClient(KustoAttribute kustoAttribute)
+        public static IKustoIngestClient GetIngestClient(KustoAttribute kustoAttribute, IConfiguration configuration)
         {
-            string envConnectionString = Environment.GetEnvironmentVariable("KustoConnectionString");
-            string engineConnectionString = kustoAttribute.Connection;
+            string engineConnectionString = GetConnectionString(kustoAttribute.Connection, configuration);
+            string cacheKey = BuildCacheKey(engineConnectionString);
+            return IngestClientCache.GetOrAdd(cacheKey, (c) => CreateIngestClient(engineConnectionString));
+        }
 
-            if (envConnectionString == null && engineConnectionString == null)
-            {
-                throw new ArgumentNullException(nameof(kustoAttribute), "Connection string attribute is empty." +
-                    "Please pass KustoConnectionString through config or through the env-var KustoConnectionString");
-            }
-
-            if (engineConnectionString == null)
-            {
-                engineConnectionString = envConnectionString;
-            }
+        public static IKustoIngestClient CreateIngestClient(string engineConnectionString)
+        {
             var engineKcsb = new KustoConnectionStringBuilder(engineConnectionString);
             /*
                 We expect minimal input from the user.The end user can just pass a connection string, we need to decipher the DM
@@ -44,8 +41,8 @@ namespace Microsoft.Azure.WebJobs.Kusto
             string dmConnectionStringEndpoint = engineKcsb.Hostname.Contains(ingestPrefix) ? engineConnectionString : engineConnectionString.ReplaceFirstOccurrence(protocolSuffix, protocolSuffix + ingestPrefix);
             var dmKcsb = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
             // Create a managed ingest connection            
-            IKustoIngestClient kustoStreamingClient = KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
-            return kustoStreamingClient;
+            return KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
+
         }
 
         public static Stream StreamFromString(string dataToIngest)
@@ -56,6 +53,25 @@ namespace Microsoft.Azure.WebJobs.Kusto
             writer.Flush();
             stream.Position = 0;
             return stream;
+        }
+
+        private static string GetConnectionString(string connectionStringSetting, IConfiguration configuration)
+        {
+            if (string.IsNullOrEmpty(connectionStringSetting))
+            {
+                throw new ArgumentException("Must specify ConnectionString, which should refer to the name of an app setting that " +
+                    "contains a Kusto connection string");
+            }
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+            return configuration.GetConnectionStringOrSetting(connectionStringSetting);
+        }
+
+        internal static string BuildCacheKey(string connectionString)
+        {
+            return $"C-{connectionString.GetHashCode()}";
         }
     }
 }

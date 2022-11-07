@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.Common;
@@ -18,9 +19,17 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.OutputBindingSamples
             HttpRequest req, ILogger log,
             [Kusto(database:"sdktestsdb" ,
             tableName:"Products" ,
-            Connection = "KustoConnectionString")] IAsyncCollector<Product> collector)
+            Connection = "KustoConnectionString")] out Product product)
         {
-            log.LogInformation($"C# function started");
+            log.LogInformation($"AddProduct function started");
+            product = new Product
+            {
+                Name = req.Query["name"],
+                ProductID = int.Parse(req.Query["productId"]),
+                Cost = int.Parse(req.Query["cost"])
+            };
+            /*
+            IAsyncCollector<Product> collector
             for (int i = 0; i < 10; i++)
             {
                 collector.AddAsync(new Product()
@@ -30,6 +39,10 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.OutputBindingSamples
                     Cost = int.Parse(req.Query["cost"])
                 });
             }
+            */
+            string productString = string.Format(CultureInfo.InvariantCulture, "Name:{0} ID:{1} Cost:{2})",
+                        product.Name, product.ProductID, product.Cost);
+            log.LogInformation("Sent product {}", productString);
         }
     }
 }
