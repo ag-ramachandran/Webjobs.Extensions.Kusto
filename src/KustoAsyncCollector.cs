@@ -4,15 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Kusto.Data.Common;
 using Kusto.Ingest;
-using Microsoft.Azure.WebJobs.Extensions.Kusto;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Kusto
 {
@@ -85,7 +85,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             {
                 if (this._rows.Count != 0)
                 {
-                    await this.IngestRowsAsync(this._rows, this._attribute, this._configuration);
+                    await this.IngestRowsAsync();
                     this._rows.Clear();
                 }
             }
@@ -105,20 +105,21 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// <param name="rows"> The rows to be ingested to Kusto.</param>
         /// <param name="attribute"> Contains the name of the table to be ingested into.</param>
         /// <param name="configuration"> Used to build up the connection.</param>
-        private async Task IngestRowsAsync(List<T> rows, KustoAttribute attribute, IConfiguration configuration)
+        private async Task IngestRowsAsync()
         {
             var upsertRowsAsyncSw = Stopwatch.StartNew();
-            var kustoIngestProperties = new KustoIngestionProperties(attribute.Database, attribute.TableName);
-            this._logger.LogDebug("Ingesting rows into table {} in database {}", attribute.TableName, attribute.Database);
-            bool parseResult = Enum.TryParse(attribute.DataFormat, out DataSourceFormat ingestDataFormat);
-            kustoIngestProperties.Format = parseResult ? ingestDataFormat : DataSourceFormat.json;
-            kustoIngestProperties.TableName = attribute.TableName;
-            if (!string.IsNullOrEmpty(attribute.MappingRef))
+            var kustoIngestProperties = new KustoIngestionProperties(this._attribute.Database, this._attribute.TableName);
+            this._logger.LogDebug("Ingesting rows into table {} in database {}", this._attribute.TableName, this._attribute.Database);
+            bool parseResult = Enum.TryParse(this._attribute.DataFormat, out DataSourceFormat ingestDataFormat);
+            DataSourceFormat format = parseResult ? ingestDataFormat : (this._rows.Count == 1 ? DataSourceFormat.json : DataSourceFormat.multijson);
+            kustoIngestProperties.Format = format;
+            kustoIngestProperties.TableName = this._attribute.TableName;
+            if (!string.IsNullOrEmpty(this._attribute.MappingRef))
             {
-                this._logger.LogDebug("Using ingestionRef {} with configuration {} ", attribute.MappingRef, configuration);
+                this._logger.LogDebug("Using ingestionRef {} with configuration {} ", this._attribute.MappingRef, this._configuration);
                 var ingestionMapping = new IngestionMapping
                 {
-                    IngestionMappingReference = attribute.MappingRef
+                    IngestionMappingReference = this._attribute.MappingRef
                 };
                 kustoIngestProperties.IngestionMapping = ingestionMapping;
             }
@@ -128,8 +129,9 @@ namespace Microsoft.Azure.WebJobs.Kusto
             {
                 SourceId = sourceId,
             };
-
-
+            // TODO fix the string case. List to string
+            string dataToIngest = (format == DataSourceFormat.multijson || format == DataSourceFormat.json) ? this.SerializeToIngestData() : "";
+            await this.IngestData(dataToIngest, kustoIngestProperties, streamSourceOptions);
             upsertRowsAsyncSw.Stop();
             this._logger.LogInformation("END IngestRowsAsync , ingestion took {} ", upsertRowsAsyncSw.ElapsedMilliseconds);
         }
@@ -141,9 +143,40 @@ namespace Microsoft.Azure.WebJobs.Kusto
             return ingestionStatus;
         }
 
+        private string SerializeToIngestData()
+        {
+            var sb = new StringBuilder();
+            bool first = true;
+            Formatting indent = this._rows.Count == 1 ? Formatting.None : Formatting.Indented;
+            using (var textWriter = new StringWriter(sb))
+            {
+                foreach (T row in this._rows)
+                {
+                    if (!first)
+                    {
+                        textWriter.WriteLine("");
+                    }
+                    first = false;
+                    using (var jsonWriter = new JsonTextWriter(textWriter) { QuoteName = false, Formatting = indent, CloseOutput = false })
+                    {
+                        if (typeof(T) == typeof(string))
+                        {
+                            textWriter.Write(row.ToString());
+                        }
+                        else
+                        {
+                            // POCO , JObject
+                            JsonSerializer.CreateDefault().Serialize(jsonWriter, row);
+                        }
+                    }
+                }
+            }
+            return sb.ToString();
+        }
 
         public void Dispose()
         {
+            this._rows.Clear();
             this._rowLock.Dispose();
         }
     }

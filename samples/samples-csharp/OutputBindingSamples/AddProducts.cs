@@ -12,26 +12,27 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Samples.OutputBindingSamples
 {
-    public static class AddProduct
+    public static class AddProducts
     {
-        [FunctionName("AddProduct")]
+        [FunctionName("AddProducts")]
         public static void Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "addproduct")]
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "addproducts")]
             HttpRequest req, ILogger log,
             [Kusto(database:"sdktestsdb" ,
             tableName:"Products" ,
-            Connection = "KustoConnectionString")] out Product product)
+            Connection = "KustoConnectionString")] IAsyncCollector<Product> collector)
         {
             log.LogInformation($"AddProduct function started");
-            product = new Product
+            var random = new Random();
+            for (int i = 0; i < 10; i++)
             {
-                Name = req.Query["name"],
-                ProductID = int.Parse(req.Query["productId"]),
-                Cost = int.Parse(req.Query["cost"])
-            };
-            string productString = string.Format(CultureInfo.InvariantCulture, "(Name:{0} ID:{1} Cost:{2})",
-                        product.Name, product.ProductID, product.Cost);
-            log.LogInformation("Ingested product {}", productString);
+                collector.AddAsync(new Product()
+                {
+                    Name = req.Query["name"] + random.Next(1000),
+                    ProductID = int.Parse(req.Query["productId"]) + random.Next(1000),
+                    Cost = int.Parse(req.Query["cost"]) + random.Next(19990)
+                });
+            }
         }
     }
 }
