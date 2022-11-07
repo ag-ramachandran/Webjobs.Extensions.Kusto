@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using Microsoft.Azure.WebJobs.Kusto;
+
 namespace Microsoft.Azure.WebJobs.Host.UnitTests
 {
     public class PublicSurfaceTests
@@ -8,18 +10,14 @@ namespace Microsoft.Azure.WebJobs.Host.UnitTests
         [Xunit.Fact]
         public void WebJobsExtensionsKustoVerifyPublicSurfaceArea()
         {
-            System.Reflection.Assembly assembly = typeof(Kusto.KustoAttribute).Assembly;
+            System.Reflection.Assembly assembly = typeof(KustoAttribute).Assembly;
 
             string[] expected = new[]
             {
-                "KustoAttribute",
-                "KustoTriggerAttribute",
-                "KustoOptions",
-                "InitialOffsetOptions",
-                "KustoWebJobsBuilderExtensions",
-                "KustoWebJobsStartup"
+                "KustoBindingExtension",
+                "KustoBindingStartup",
+                "KustoAttribute"
             };
-
             TestCommon.TestHelpers.AssertPublicTypes(expected, assembly);
         }
     }

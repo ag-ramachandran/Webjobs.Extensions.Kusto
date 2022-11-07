@@ -27,6 +27,15 @@
           "Microsoft.TestPlatform.TestHost": "17.3.2"
         }
       },
+      "Moq": {
+        "type": "Direct",
+        "requested": "[4.18.2, )",
+        "resolved": "4.18.2",
+        "contentHash": "SjxKYS5nX6prcaT8ZjbkONh3vnh0Rxru09+gQ1a07v4TM530Oe/jq3Q4dOZPfo1wq0LYmTgLOZKrqRfEx4auPw==",
+        "dependencies": {
+          "Castle.Core": "5.1.0"
+        }
+      },
       "xunit.core": {
         "type": "Direct",
         "requested": "[2.3.1, )",
@@ -118,6 +127,14 @@
           "Azure.Storage.Common": "12.9.0",
           "System.Memory.Data": "1.0.2",
           "System.Text.Json": "4.6.0"
+        }
+      },
+      "Castle.Core": {
+        "type": "Transitive",
+        "resolved": "5.1.0",
+        "contentHash": "31UJpTHOiWq95CDOHazE3Ub/hE/PydNWsJMwnEVTqFFP4WhAugwpaVGxzOxKgNeSUUeqS2W6lxV+q7u1pAOfXg==",
+        "dependencies": {
+          "System.Diagnostics.EventLog": "4.7.0"
         }
       },
       "Microsoft.Azure.KeyVault.Core": {
@@ -556,6 +573,16 @@
         "resolved": "4.7.0",
         "contentHash": "oJjw3uFuVDJiJNbCD8HB4a2p3NYLdt1fiT5OGsPLw+WTOuG0KpP4OXelMmmVKpClueMsit6xOlzy4wNKQFiBLg=="
       },
+      "System.Diagnostics.EventLog": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "iDoKGQcRwX0qwY+eAEkaJGae0d/lHlxtslO+t8pJWAUxlvY3tqLtVOPnW2UU4cFjP0Y/L1QBqhkZfSyGqVMR2w==",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "3.1.0",
+          "Microsoft.Win32.Registry": "4.7.0",
+          "System.Security.Principal.Windows": "4.7.0"
+        }
+      },
       "System.Diagnostics.TraceSource": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -836,8 +863,7 @@
         "dependencies": {
           "Microsoft.Azure.Kusto.Ingest": "[11.0.0, )",
           "Microsoft.Azure.WebJobs": "[3.0.33, )",
-          "Newtonsoft.Json": "[13.0.1, )",
-          "morelinq": "[3.3.2, )"
+          "Newtonsoft.Json": "[13.0.1, )"
         }
       },
       "Microsoft.Azure.Kusto.Ingest": {
@@ -899,12 +925,6 @@
           "System.Security.Principal.Windows": "4.7.0",
           "System.Text.Encoding.CodePages": "4.7.0"
         }
-      },
-      "morelinq": {
-        "type": "CentralTransitive",
-        "requested": "[3.3.2, )",
-        "resolved": "3.3.2",
-        "contentHash": "MQc8GppZJLmjvcpEdf3EkC6ovsp7gRWt2e5mC7dcIOrgwSc+yjFd3JQ0iRqr3XrUT6rb/phv0IkEmBtbfVA7AQ=="
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",

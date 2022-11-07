@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kusto.Data.Common;
 using Kusto.Ingest;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Azure.WebJobs.Extensions.Kusto;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -18,34 +18,15 @@ namespace Microsoft.Azure.WebJobs.Kusto
 {
     internal class KustoAsyncCollector<T> : IAsyncCollector<T>, IDisposable
     {
-        private readonly IConfiguration _configuration;
-        private readonly KustoAttribute _attribute;
         private readonly ILogger _logger;
-        private readonly IKustoIngestClient _kustoIngestClient;
         private readonly List<T> _rows = new List<T>();
         private readonly SemaphoreSlim _rowLock = new SemaphoreSlim(1, 1);
+        private readonly KustoContext _kustoContext;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="KustoAsyncCollector<typeparamref name="T"/>"/> class.
-        /// </summary>
-        /// <param name="connection">
-        /// Contains the connection string used to establish connection to Kusto and ingest data.
-        /// </param>
-        /// <param name="attribute">
-        /// Contains as attributes the database and the table to ingest the data into.
-        /// </param>
-        /// <param name="loggerFactory">
-        /// Logger Factory for creating an ILogger.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if either configuration or attribute is null.
-        /// </exception>
-        public KustoAsyncCollector(IConfiguration configuration, KustoAttribute attribute, ILogger logger)
+        public KustoAsyncCollector(ILogger logger, KustoContext kustoContext)
         {
-            this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            this._attribute = attribute ?? throw new ArgumentNullException(nameof(attribute));
             this._logger = logger;
-            this._kustoIngestClient = KustoBindingUtilities.GetIngestClient(attribute, configuration);
+            this._kustoContext = kustoContext;
         }
 
         /// <summary>
@@ -107,18 +88,20 @@ namespace Microsoft.Azure.WebJobs.Kusto
         /// <param name="configuration"> Used to build up the connection.</param>
         private async Task IngestRowsAsync()
         {
+            KustoAttribute resolvedAttribute = this._kustoContext.ResolvedAttribute;
             var upsertRowsAsyncSw = Stopwatch.StartNew();
-            var kustoIngestProperties = new KustoIngestionProperties(this._attribute.Database, this._attribute.TableName);
-            this._logger.LogDebug("Ingesting rows into table {} in database {}", this._attribute.TableName, this._attribute.Database);
+            var kustoIngestProperties = new KustoIngestionProperties(resolvedAttribute.Database, resolvedAttribute.TableName);
+            // this._logger.LogDebug("Ingesting rows into table {} in database {}", resolvedAttribute.TableName, resolvedAttribute.Database);
             DataSourceFormat format = this.GetDataFormat();
             kustoIngestProperties.Format = format;
-            kustoIngestProperties.TableName = this._attribute.TableName;
-            if (!string.IsNullOrEmpty(this._attribute.MappingRef))
+            kustoIngestProperties.TableName = resolvedAttribute.TableName;
+            string dataToIngest = (format == DataSourceFormat.multijson || format == DataSourceFormat.json) ? this.SerializeToIngestData() : string.Join(Environment.NewLine, this._rows); ;
+            if (!string.IsNullOrEmpty(resolvedAttribute.MappingRef))
             {
-                this._logger.LogDebug("Using ingestionRef {} with configuration {} ", this._attribute.MappingRef, this._configuration);
+                this._logger.LogInformation("Using ingestionMappingRef {} and datasourceformat {}. Number of rows {}", resolvedAttribute.MappingRef, format, this._rows.Count);
                 var ingestionMapping = new IngestionMapping
                 {
-                    IngestionMappingReference = this._attribute.MappingRef
+                    IngestionMappingReference = resolvedAttribute.MappingRef
                 };
                 kustoIngestProperties.IngestionMapping = ingestionMapping;
             }
@@ -130,15 +113,14 @@ namespace Microsoft.Azure.WebJobs.Kusto
             /*
                 The expectation here is that user will provide a CSV mapping or a JSON/Multi-JSON mapping
              */
-            string dataToIngest = (format == DataSourceFormat.multijson || format == DataSourceFormat.json) ? this.SerializeToIngestData() : string.Join(Environment.NewLine, this._rows); ;
             await this.IngestData(dataToIngest, kustoIngestProperties, streamSourceOptions);
             upsertRowsAsyncSw.Stop();
-            this._logger.LogInformation("End IngestRowsAsync with SourceId {} , ingestion took {} ", sourceId, upsertRowsAsyncSw.ElapsedMilliseconds);
+            //            this._logger.LogInformation("End IngestRowsAsync with SourceId {} , ingestion took {} ", sourceId, upsertRowsAsyncSw.ElapsedMilliseconds);
         }
 
         private async Task<IngestionStatus> IngestData(string dataToIngest, KustoIngestionProperties kustoIngestionProperties, StreamSourceOptions streamSourceOptions)
         {
-            IKustoIngestionResult ingestionResult = await this._kustoIngestClient.IngestFromStreamAsync(KustoBindingUtilities.StreamFromString(dataToIngest), kustoIngestionProperties, streamSourceOptions);
+            IKustoIngestionResult ingestionResult = await this._kustoContext.IngestService.IngestFromStreamAsync(KustoBindingUtilities.StreamFromString(dataToIngest), kustoIngestionProperties, streamSourceOptions);
             IngestionStatus ingestionStatus = ingestionResult.GetIngestionStatusBySourceId(streamSourceOptions.SourceId);
             return ingestionStatus;
         }
@@ -176,8 +158,9 @@ namespace Microsoft.Azure.WebJobs.Kusto
 
         private DataSourceFormat GetDataFormat()
         {
+            KustoAttribute resolvedAttribute = this._kustoContext.ResolvedAttribute;
             DataSourceFormat returnFormat = DataSourceFormat.json;
-            if (string.IsNullOrEmpty(this._attribute.DataFormat))
+            if (string.IsNullOrEmpty(resolvedAttribute.DataFormat))
             {
                 if (this._rows.Count > 1)
                 {
@@ -186,7 +169,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             }
             else
             {
-                bool parseResult = Enum.TryParse(this._attribute.DataFormat, out DataSourceFormat ingestDataFormat);
+                bool parseResult = Enum.TryParse(resolvedAttribute.DataFormat, out DataSourceFormat ingestDataFormat);
 
                 returnFormat = parseResult && ingestDataFormat == DataSourceFormat.json && this._rows.Count > 1
                     ? DataSourceFormat.multijson
