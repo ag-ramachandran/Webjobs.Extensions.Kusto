@@ -110,8 +110,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             var upsertRowsAsyncSw = Stopwatch.StartNew();
             var kustoIngestProperties = new KustoIngestionProperties(this._attribute.Database, this._attribute.TableName);
             this._logger.LogDebug("Ingesting rows into table {} in database {}", this._attribute.TableName, this._attribute.Database);
-            bool parseResult = Enum.TryParse(this._attribute.DataFormat, out DataSourceFormat ingestDataFormat);
-            DataSourceFormat format = parseResult ? ingestDataFormat : (this._rows.Count == 1 ? DataSourceFormat.json : DataSourceFormat.multijson);
+            DataSourceFormat format = this.GetDataFormat();
             kustoIngestProperties.Format = format;
             kustoIngestProperties.TableName = this._attribute.TableName;
             if (!string.IsNullOrEmpty(this._attribute.MappingRef))
@@ -123,17 +122,18 @@ namespace Microsoft.Azure.WebJobs.Kusto
                 };
                 kustoIngestProperties.IngestionMapping = ingestionMapping;
             }
-
             var sourceId = Guid.NewGuid();
             var streamSourceOptions = new StreamSourceOptions()
             {
                 SourceId = sourceId,
             };
-            // TODO fix the string case. List to string
-            string dataToIngest = (format == DataSourceFormat.multijson || format == DataSourceFormat.json) ? this.SerializeToIngestData() : "";
+            /*
+                The expectation here is that user will provide a CSV mapping or a JSON/Multi-JSON mapping
+             */
+            string dataToIngest = (format == DataSourceFormat.multijson || format == DataSourceFormat.json) ? this.SerializeToIngestData() : string.Join(Environment.NewLine, this._rows); ;
             await this.IngestData(dataToIngest, kustoIngestProperties, streamSourceOptions);
             upsertRowsAsyncSw.Stop();
-            this._logger.LogInformation("END IngestRowsAsync , ingestion took {} ", upsertRowsAsyncSw.ElapsedMilliseconds);
+            this._logger.LogInformation("End IngestRowsAsync with SourceId {} , ingestion took {} ", sourceId, upsertRowsAsyncSw.ElapsedMilliseconds);
         }
 
         private async Task<IngestionStatus> IngestData(string dataToIngest, KustoIngestionProperties kustoIngestionProperties, StreamSourceOptions streamSourceOptions)
@@ -172,6 +172,28 @@ namespace Microsoft.Azure.WebJobs.Kusto
                 }
             }
             return sb.ToString();
+        }
+
+        private DataSourceFormat GetDataFormat()
+        {
+            DataSourceFormat returnFormat = DataSourceFormat.json;
+            if (string.IsNullOrEmpty(this._attribute.DataFormat))
+            {
+                if (this._rows.Count > 1)
+                {
+                    returnFormat = DataSourceFormat.multijson;
+                }
+            }
+            else
+            {
+                bool parseResult = Enum.TryParse(this._attribute.DataFormat, out DataSourceFormat ingestDataFormat);
+
+                returnFormat = parseResult && ingestDataFormat == DataSourceFormat.json && this._rows.Count > 1
+                    ? DataSourceFormat.multijson
+                    : ingestDataFormat;
+
+            }
+            return returnFormat;
         }
 
         public void Dispose()
