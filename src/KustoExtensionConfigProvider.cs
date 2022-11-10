@@ -58,7 +58,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
             // Validate the attributes we have
             rule.AddValidator(this.ValidateConnection);
             // Bind to the types
-            rule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this, logger);
+            rule.BindToCollector<KustoOpenType>(typeof(KustoAsyncCollectorBuilder<>), this);
         }
         internal void ValidateConnection(KustoAttribute attribute, Type paramType)
         {
@@ -97,23 +97,29 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
 
         internal IKustoIngestClient GetIngestClient(KustoAttribute kustoAttribute)
         {
-            string engineConnectionString = this.GetConnectionString(kustoAttribute.Connection);
+            string connection = string.IsNullOrEmpty(kustoAttribute.Connection) ? KustoConstants.DefaultConnectionStringName : kustoAttribute.Connection;
+            string engineConnectionString = this.GetConnectionString(connection);
             string cacheKey = BuildCacheKey(engineConnectionString);
             return this.IngestClientCache.GetOrAdd(cacheKey, (c) => CreateIngestClient(engineConnectionString));
         }
 
         internal static IKustoIngestClient CreateIngestClient(string engineConnectionString)
         {
-            var engineKcsb = new KustoConnectionStringBuilder(engineConnectionString);
+            var engineKcsb = new KustoConnectionStringBuilder(engineConnectionString)
+            {
+                ClientVersionForTracing = KustoConstants.ClientDetailForTracing
+            };
             /*
                 We expect minimal input from the user.The end user can just pass a connection string, we need to decipher the DM
                 ingest endpoint as well from this. Both the engine and DM endpoint are needed for the managed ingest to happen
              */
             string dmConnectionStringEndpoint = engineKcsb.Hostname.Contains(KustoConstants.IngestPrefix) ? engineConnectionString : engineConnectionString.ReplaceFirstOccurrence(KustoConstants.ProtocolSuffix, KustoConstants.ProtocolSuffix + KustoConstants.IngestPrefix);
-            var dmKcsb = new KustoConnectionStringBuilder(dmConnectionStringEndpoint);
+            var dmKcsb = new KustoConnectionStringBuilder(dmConnectionStringEndpoint)
+            {
+                ClientVersionForTracing = KustoConstants.ClientDetailForTracing
+            };
             // Create a managed ingest connection            
             return KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
-
         }
 
         internal string GetConnectionString(string connectionStringSetting)
