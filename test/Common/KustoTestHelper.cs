@@ -2,16 +2,20 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 
-using System;
+
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Kusto.Ingest;
+using Microsoft.Azure.WebJobs.Host.Config;
+using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.WebJobs.Host.TestCommon;
 using Microsoft.Azure.WebJobs.Kusto;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Memory;
+using Microsoft.Extensions.Hosting;
 using Moq;
 using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common
 {
@@ -46,12 +50,26 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common
 
         public static IConfiguration BuildConfiguration()
         {
-            var initialConfig = new List<KeyValuePair<string, string>>()
+            var values = new Dictionary<string, string>()
             {
-                KeyValuePair.Create(KustoConstants.DefaultConnectionStringName, "Data Source=https://kustofunctionscluster.eastus.dev.kusto.windows.net;Database=unittestdb;Fed=True;AppClientId=11111111-xxxx-xxxx-xxxx-111111111111;AppKey=appKey~appKey;Authority Id=1111111-1111-1111-1111-111111111111"),
-                KeyValuePair.Create("Attribute", "database=unittestdb;tableName=Items;Connection=KustoConnectionString")
+                { KustoConstants.DefaultConnectionStringName, "Data Source=https://kustofunctionscluster.eastus.dev.kusto.windows.net;Database=unittestdb;Fed=True;AppClientId=11111111-xxxx-xxxx-xxxx-111111111111;AppKey=appKey~appKey;Authority Id=1111111-1111-1111-1111-111111111111" },
+                { "Attribute", "database=unittestdb;tableName=Items;Connection=KustoConnectionString" },
             };
-            return new ConfigurationBuilder().AddInMemoryCollection(initialConfig).AddEnvironmentVariables().Build();
+            return TestHelpers.BuildConfiguration(values);
+        }
+
+        public static ExtensionConfigContext CreateExtensionConfigContext(INameResolver resolver)
+        {
+#pragma warning disable CS0618 // Cannot use var. IWebHookProvider is in Beta
+            var mockWebHookProvider = new Mock<IWebHookProvider>();
+            var mockExtensionRegistry = new Mock<IExtensionRegistry>();
+
+            // TODO: ConverterManager needs to be fixed but this will work for now.
+            IHost host = new HostBuilder()
+                .ConfigureWebJobs()
+                .Build();
+            IConverterManager converterManager = host.Services.GetRequiredService<IConverterManager>();
+            return new ExtensionConfigContext(BuildConfiguration(), resolver, converterManager, mockWebHookProvider.Object, mockExtensionRegistry.Object);
         }
     }
 }
