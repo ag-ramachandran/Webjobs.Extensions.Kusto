@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common;
+using Microsoft.Azure.WebJobs.Host.Config;
+using Microsoft.Azure.WebJobs.Kusto;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Azure.WebJobs.Kusto;
-using Microsoft.Azure.WebJobs.Host.Config;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
 {
@@ -27,23 +27,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
             Assert.NotNull(asyncBuilder);
             Assert.Single(kustoExtensionConfigProvider.IngestClientCache);
         }
-        [Fact]
-        public void EmptyClients()
-        {
-            // Given
-            KustoExtensionConfigProvider kustoExtensionConfigProvider = InitializeCreatesClients();
-            kustoExtensionConfigProvider.IngestClientCache.Clear();
-            var attribute = new KustoAttribute(string.Empty, string.Empty);
-            // When
-            KustoContext context = kustoExtensionConfigProvider.CreateContext(attribute);
-            _ = kustoExtensionConfigProvider.CreateContext(attribute);
-            // Then
-            Assert.NotNull(context);
-            Assert.NotNull(context.ResolvedAttribute);
-            Assert.Equal(context.ResolvedAttribute, attribute);
-            Assert.Single(kustoExtensionConfigProvider.IngestClientCache);
-        }
-
         private static KustoExtensionConfigProvider InitializeCreatesClients()
         {
             var nameResolver = new KustoNameResolver();

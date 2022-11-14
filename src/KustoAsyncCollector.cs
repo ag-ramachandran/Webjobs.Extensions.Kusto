@@ -168,7 +168,7 @@ namespace Microsoft.Azure.WebJobs.Kusto
             else
             {
                 bool parseResult = Enum.TryParse(resolvedAttribute.DataFormat, out DataSourceFormat ingestDataFormat);
-
+                // If user provides JSON and it has multiple values then convert to multi-json
                 returnFormat = parseResult && ingestDataFormat == DataSourceFormat.json && this._rows.Count > 1
                     ? DataSourceFormat.multijson
                     : ingestDataFormat;
