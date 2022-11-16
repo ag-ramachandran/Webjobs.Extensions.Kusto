@@ -17,10 +17,12 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using Newtonsoft.Json;
 
+
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common
 {
     internal class KustoTestHelper
     {
+        public const string DefaultTestConnectionString = "Data Source=https://kustofunctionscluster.eastus.dev.kusto.windows.net;Database=unittestdb;Fed=True;AppClientId=11111111-xxxx-xxxx-xxxx-111111111111;AppKey=appKey~appKey;Authority Id=1111111-1111-1111-1111-111111111111";
         public static KustoContext CreateContext(IKustoIngestClient ingestClientService, string database = "unittest", string tableName = "items", string mappingRef = "", string dataFormat = "json")
         {
             var attribute = new KustoAttribute(database, tableName, mappingRef, dataFormat);
@@ -52,7 +54,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common
         {
             var values = new Dictionary<string, string>()
             {
-                { KustoConstants.DefaultConnectionStringName, "Data Source=https://kustofunctionscluster.eastus.dev.kusto.windows.net;Database=unittestdb;Fed=True;AppClientId=11111111-xxxx-xxxx-xxxx-111111111111;AppKey=appKey~appKey;Authority Id=1111111-1111-1111-1111-111111111111" },
+                { KustoConstants.DefaultConnectionStringName, DefaultTestConnectionString },
                 { "Attribute", "database=unittestdb;tableName=Items;Connection=KustoConnectionString" },
             };
             return TestHelpers.BuildConfiguration(values);

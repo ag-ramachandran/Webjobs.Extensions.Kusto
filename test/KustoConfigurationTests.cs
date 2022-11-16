@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using Kusto.Ingest;
 using Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common;
 using Microsoft.Azure.WebJobs.Host.Config;
 using Microsoft.Azure.WebJobs.Kusto;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
@@ -30,7 +32,10 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
         private static KustoExtensionConfigProvider InitializeCreatesClients()
         {
             var nameResolver = new KustoNameResolver();
-            var kustoExtensionConfigProvider = new KustoExtensionConfigProvider(_baseConfig, NullLoggerFactory.Instance);
+            var mockIngestionClient = new Mock<IKustoIngestClient>(MockBehavior.Strict);
+            var ingestClientFactory = new MockManagedStreamingClientFactory(mockIngestionClient.Object);
+
+            var kustoExtensionConfigProvider = new KustoExtensionConfigProvider(_baseConfig, NullLoggerFactory.Instance, ingestClientFactory);
             kustoExtensionConfigProvider.IngestClientCache.Clear();
             ExtensionConfigContext context = KustoTestHelper.CreateExtensionConfigContext(nameResolver);
             // Should Initialize and register the validators and should not throw an error

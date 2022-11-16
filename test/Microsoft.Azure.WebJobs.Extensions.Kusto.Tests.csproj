@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.WebJobs.Host.TestCommon" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

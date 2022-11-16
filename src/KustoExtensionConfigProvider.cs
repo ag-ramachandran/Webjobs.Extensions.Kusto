@@ -4,8 +4,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Kusto.Cloud.Platform.Utils;
-using Kusto.Data;
 using Kusto.Ingest;
 using Microsoft.Azure.WebJobs.Description;
 using Microsoft.Azure.WebJobs.Host.Bindings;
@@ -26,6 +24,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
         internal ConcurrentDictionary<string, IKustoIngestClient> IngestClientCache { get; } = new ConcurrentDictionary<string, IKustoIngestClient>();
         private readonly IConfiguration _configuration;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IKustoClientFactory _kustoClientFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KustoBindingConfigProvider/>"/> class.
@@ -33,10 +32,11 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
         /// <exception cref="ArgumentNullException">
         /// Thrown if either parameter is null.
         /// </exception>
-        public KustoExtensionConfigProvider(IConfiguration configuration, ILoggerFactory loggerFactory)
+        public KustoExtensionConfigProvider(IConfiguration configuration, ILoggerFactory loggerFactory, IKustoClientFactory kustoClientFactory)
         {
             this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this._loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            this._kustoClientFactory = kustoClientFactory ?? throw new ArgumentNullException(nameof(kustoClientFactory));
         }
 
         /// <summary>
@@ -100,26 +100,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto
             string connection = string.IsNullOrEmpty(kustoAttribute.Connection) ? KustoConstants.DefaultConnectionStringName : kustoAttribute.Connection;
             string engineConnectionString = this.GetConnectionString(connection);
             string cacheKey = BuildCacheKey(engineConnectionString);
-            return this.IngestClientCache.GetOrAdd(cacheKey, (c) => CreateIngestClient(engineConnectionString));
-        }
-
-        internal static IKustoIngestClient CreateIngestClient(string engineConnectionString)
-        {
-            var engineKcsb = new KustoConnectionStringBuilder(engineConnectionString)
-            {
-                ClientVersionForTracing = KustoConstants.ClientDetailForTracing
-            };
-            /*
-                We expect minimal input from the user.The end user can just pass a connection string, we need to decipher the DM
-                ingest endpoint as well from this. Both the engine and DM endpoint are needed for the managed ingest to happen
-             */
-            string dmConnectionStringEndpoint = engineKcsb.Hostname.Contains(KustoConstants.IngestPrefix) ? engineConnectionString : engineConnectionString.ReplaceFirstOccurrence(KustoConstants.ProtocolSuffix, KustoConstants.ProtocolSuffix + KustoConstants.IngestPrefix);
-            var dmKcsb = new KustoConnectionStringBuilder(dmConnectionStringEndpoint)
-            {
-                ClientVersionForTracing = KustoConstants.ClientDetailForTracing
-            };
-            // Create a managed ingest connection            
-            return KustoIngestFactory.CreateManagedStreamingIngestClient(engineKcsb, dmKcsb);
+            return this.IngestClientCache.GetOrAdd(cacheKey, (c) => this._kustoClientFactory.IngestClientFactory(engineConnectionString));
         }
 
         internal string GetConnectionString(string connectionStringSetting)
