@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kusto.Ingest;
 using Microsoft.Azure.WebJobs.Extensions.Kusto.Tests.Common;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Host.TestCommon;
 using Microsoft.Azure.WebJobs.Kusto;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +18,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using Capture = Moq.Capture;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
 {
@@ -29,6 +29,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
         private static readonly IConfiguration _baseConfig = KustoTestHelper.BuildConfiguration();
         private readonly ILoggerFactory _loggerFactory = new LoggerFactory();
         private readonly TestLoggerProvider _loggerProvider = new TestLoggerProvider();
+
         public KustoBindingE2ETests()
         {
             this._loggerFactory.AddProvider(this._loggerProvider);
@@ -53,21 +54,43 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
             mockIngestionResult.Setup(m => m.GetIngestionStatusBySourceId(It.IsAny<Guid>())).Returns(ingestionStatus);
             // set the ingestion behavior
             mockIngestionClient.Setup(m => m.IngestFromStreamAsync(
-                Capture.In(actualIngestDataStreams),
-                Capture.In(actualKustoIngestionProps),
-                Capture.In(actualStreamSourceOptions))).ReturnsAsync(mockIngestionResult.Object);
-
+                It.IsAny<Stream>(),
+                It.IsAny<KustoIngestionProperties>(),
+                It.IsAny<StreamSourceOptions>())).
+                ReturnsAsync(mockIngestionResult.Object).
+                Callback<Stream, KustoIngestionProperties, StreamSourceOptions>((s, kip, sso) =>
+                {
+                    Validate(s, kip, sso);
+                });
             var ingestClientFactory = new MockManagedStreamingClientFactory(mockIngestionClient.Object);
             await this.RunTestAsync(typeof(KustoEndToEndFunctions), ingestClientFactory, "Outputs");
-            KustoIngestionProperties actualKustoIngestionProp = actualKustoIngestionProps.First();
-            Assert.Equal(TableName, actualKustoIngestionProp.TableName);
-            Assert.Equal(DatabaseName, actualKustoIngestionProp.DatabaseName);
-            //            Assert.Equal("multijson", actualKustoIngestionProp.Format.ToString());
-            //            List<Item> actualResultItems = KustoTestHelper.LoadItems(actualIngestDataStreams.First());
-            //            Assert.Equal("Outputs", this._loggerProvider.GetAllUserLogMessages().Single().FormattedMessage);
-
+            // Verify the interactions
+            mockIngestionClient.Verify(m => m.IngestFromStreamAsync(
+                            It.IsAny<Stream>(),
+                            It.IsAny<KustoIngestionProperties>(),
+                            It.IsAny<StreamSourceOptions>()), Times.Exactly(5));
+            mockIngestionResult.Verify(m => m.GetIngestionStatusBySourceId(It.IsAny<Guid>()), Times.Exactly(5));
             mockIngestionClient.VerifyAll();
         }
+
+        private static void Validate(Stream actualStreamData, KustoIngestionProperties actualKustoIngestionProperties, StreamSourceOptions actualOptions)
+        {
+            Assert.NotNull(actualStreamData);
+            Assert.NotNull(actualOptions);
+            Assert.Equal(TableName, actualKustoIngestionProperties.TableName);
+            Assert.Equal(DatabaseName, actualKustoIngestionProperties.DatabaseName);
+            List<Item> items = KustoTestHelper.LoadItems(actualStreamData);
+            Assert.NotNull(items);
+            if (items.Count == 1)
+            {
+                Assert.Equal("json", actualKustoIngestionProperties.Format.ToString());
+            }
+            else
+            {
+                Assert.Equal("multijson", actualKustoIngestionProperties.Format.ToString());
+            }
+        }
+
 
         public void Dispose()
         {
@@ -135,8 +158,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
                 [Kusto(database: DatabaseName, tableName: TableName, Connection = KustoConstants.DefaultConnectionStringName)] out string newItemString,
                 [Kusto(database: DatabaseName, tableName: TableName, Connection = KustoConstants.DefaultConnectionStringName)] out object[] arrayItem,
                 [Kusto(database: DatabaseName, tableName: TableName, Connection = KustoConstants.DefaultConnectionStringName)] IAsyncCollector<object> asyncCollector,
-                [Kusto(database: DatabaseName, tableName: TableName, Connection = KustoConstants.DefaultConnectionStringName)] ICollector<object> collector,
-                TraceWriter trace)
+                [Kusto(database: DatabaseName, tableName: TableName, Connection = KustoConstants.DefaultConnectionStringName)] ICollector<object> collector)
             {
                 newItem = new { };
                 newItemString = "{}";
@@ -152,7 +174,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.Kusto.Tests
                 });
                 collector.Add(new { });
                 collector.Add(new { });
-                trace.Warning("Outputs");
             }
         }
     }

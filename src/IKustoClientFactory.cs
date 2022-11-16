@@ -7,11 +7,11 @@ using Kusto.Ingest;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Kusto
 {
-    public interface IKustoClientFactory
+    internal interface IKustoClientFactory
     {
         IKustoIngestClient IngestClientFactory(string engineConnectionString);
     }
-    public class KustoManagedStreamingClientFactory : IKustoClientFactory
+    internal class KustoManagedStreamingClientFactory : IKustoClientFactory
     {
         public IKustoIngestClient IngestClientFactory(string engineConnectionString)
         {
